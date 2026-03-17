@@ -1,4 +1,4 @@
-﻿using Microsoft.Win32;
+using Microsoft.Win32;
 using System.Windows;
 
 namespace VideoScreensaver
@@ -17,14 +17,19 @@ namespace VideoScreensaver
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             var options = Config.ReadConfig();
-            VideoPathTextbox.Text = options.VideoPath;
+            VideoPathTextbox.Text = options.VideoPaths != null ? string.Join(";", options.VideoPaths) : "";
             VolumeSlider.Value = options.Volume * 100;
+            if (options.StretchMode == "Fill") StretchComboBox.SelectedIndex = 0;
+            else StretchComboBox.SelectedIndex = 1;
+            LoggingCheckBox.IsChecked = options.EnableLogging;
         }
 
         // Save changes to config
         private void ConfirmConfig(object sender, RoutedEventArgs e)
         {
-            Config.WriteConfig(VideoPathTextbox.Text, VolumeSlider.Value / 100);
+            var paths = new System.Collections.Generic.List<string>(VideoPathTextbox.Text.Split(new[] { ';' }, System.StringSplitOptions.RemoveEmptyEntries));
+            string stretch = StretchComboBox.SelectedIndex == 0 ? "Fill" : "UniformToFill";
+            Config.WriteConfig(paths, VolumeSlider.Value / 100, stretch, LoggingCheckBox.IsChecked == true);
             Close();
         }
 
@@ -40,9 +45,10 @@ namespace VideoScreensaver
             OpenFileDialog open = new OpenFileDialog();
             open.CheckFileExists = true;
             open.CheckPathExists = true;
-            open.Multiselect = false;
+            open.Multiselect = true;
             open.ShowDialog();
-            VideoPathTextbox.Text = open.FileName;
+            if (open.FileNames.Length > 0)
+                VideoPathTextbox.Text = string.Join(";", open.FileNames);
         }
 
         

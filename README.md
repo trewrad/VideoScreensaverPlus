@@ -1,3 +1,9 @@
+## Forked from dtmorrow/VideoScreensaver
+Added features
+- Multi-monitor support
+- Play through a set of videos (unique video on each monitor)
+- Stretch/Fill configuration option
+
 # VideoScreensaver
 This application functions as a screensaver that will play a looping video while active. The video that plays is configurable, as well as the volume of the video (if the video has sound).
 

@@ -10,9 +10,25 @@ namespace VideoScreensaver
     /// </summary>
     public partial class App : Application
     {
+        private static bool? _loggingEnabled;
+        private static bool _logInitialized = false;
+
         public static void Log(string message)
         {
-            try { System.IO.File.AppendAllText("screensaver_log.txt", string.Format("{0}: {1}\n", DateTime.Now, message)); }
+            if (_loggingEnabled == null) {
+                _loggingEnabled = Config.ReadConfig().EnableLogging;
+            }
+            if (_loggingEnabled != true) return;
+
+            try 
+            { 
+               if (!_logInitialized) {
+                   System.IO.File.WriteAllText("screensaver_log.txt", string.Format("{0}: App Initialized\n{0}: {1}\n", DateTime.Now, message));
+                   _logInitialized = true;
+               } else {
+                   System.IO.File.AppendAllText("screensaver_log.txt", string.Format("{0}: {1}\n", DateTime.Now, message)); 
+               }
+            }
             catch { }
         }
 

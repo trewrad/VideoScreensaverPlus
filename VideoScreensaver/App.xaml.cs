@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Windows;
 
 namespace VideoScreensaver
@@ -10,8 +10,15 @@ namespace VideoScreensaver
     /// </summary>
     public partial class App : Application
     {
+        public static void Log(string message)
+        {
+            try { System.IO.File.AppendAllText("screensaver_log.txt", string.Format("{0}: {1}\n", DateTime.Now, message)); }
+            catch { }
+        }
+
         private void Application_Startup(object sender, StartupEventArgs e)
         {
+            Log(string.Format("App started with arguments: {0}", (e.Args.Length > 0 ? string.Join(" ", e.Args) : "none")));
             Config.CheckConfig();
             if (e.Args.Length > 0)
             {
@@ -42,9 +49,35 @@ namespace VideoScreensaver
                 }
                 else if (firstArgument == "/s") // Full-screen mode
                 {
-                    ScreensaverWindow FullScreensaver = new ScreensaverWindow();
-                    FullScreensaver.Closed += CloseApplication;
-                    FullScreensaver.Show();
+                    var options = Config.ReadConfig();
+                    var allScreens = System.Windows.Forms.Screen.AllScreens;
+                    int screenCount = allScreens.Length;
+                    var videoPaths = options.VideoPaths ?? new System.Collections.Generic.List<string>();
+
+                    for (int screenIndex = 0; screenIndex < screenCount; screenIndex++)
+                    {
+                        var screen = allScreens[screenIndex];
+                        var playlistForScreen = new System.Collections.Generic.List<string>();
+
+                        if (videoPaths.Count > 0)
+                        {
+                            int videosPerScreen = (int)Math.Ceiling((double)videoPaths.Count / screenCount);
+                            int startIndex = screenIndex * videosPerScreen;
+
+                            for (int i = 0; i < videosPerScreen; i++)
+                            {
+                                if (startIndex + i < videoPaths.Count) playlistForScreen.Add(videoPaths[startIndex + i]);
+                            }
+
+                            if (playlistForScreen.Count == 0) playlistForScreen.Add(videoPaths[screenIndex % videoPaths.Count]);
+                        }
+
+                        ScreensaverWindow FullScreensaver = new ScreensaverWindow(screen.Bounds, playlistForScreen, options.Volume, options.StretchMode, screenIndex);
+                        Log(string.Format("Creating window for screen {0} at Left: {1}, Top: {2}, Width: {3}, Height: {4}", screenIndex, screen.Bounds.Left, screen.Bounds.Top, screen.Bounds.Width, screen.Bounds.Height));
+                        FullScreensaver.Closed += CloseApplication;
+                        FullScreensaver.Show();
+                        Log(string.Format("Window for screen {0} shown.", screenIndex));
+                    }
                 }
                 else    // Undefined argument
                 {
